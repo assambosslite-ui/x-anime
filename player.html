@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watching | X Anime</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root { --bg-main: #0a0a0a; --bg-card: #151515; --primary: #ff4444; --text-white: #ffffff; --text-gray: #a0a0b5; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-white); overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
+
+        header { background: rgba(10,10,10,0.95); padding: 15px 5%; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+        .logo span { color: var(--primary); }
+
+        .watch-container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+        
+        /* Video Player Styling */
+        .player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* Server Selection Styling */
+        .server-box { background: var(--bg-card); margin-top: 15px; padding: 15px; border-radius: 10px; border: 1px solid #222; }
+        .server-title { font-size: 14px; color: var(--text-gray); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .server-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+        
+        .srv-btn { background: #222; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s; text-align: center; }
+        .srv-btn:hover { border-color: var(--primary); background: #2a2a2a; }
+        .srv-btn.active { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 10px rgba(255, 68, 68, 0.4); }
+
+        /* Anime Info Styling */
+        .anime-info { display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        .info-poster img { width: 180px; border-radius: 8px; border: 1px solid #333; }
+        .info-text { flex: 1; min-width: 280px; }
+        .info-text h1 { font-size: 28px; margin-bottom: 10px; color: var(--primary); }
+        .meta-tags { display: flex; gap: 10px; margin-bottom: 15px; }
+        .meta-tags span { background: #1a1a1a; padding: 5px 12px; border-radius: 4px; font-size: 12px; border: 1px solid #333; }
+
+        /* Episode List Styling */
+        .episode-section { margin-top: 40px; }
+        .ep-header { background: #1a1a1a; padding: 12px 20px; border-radius: 8px 8px 0 0; border-bottom: 2px solid var(--primary); font-weight: bold; display: flex; justify-content: space-between; }
+        .ep-grid { background: #111; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; padding: 20px; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; }
+        .ep-num { background: #222; padding: 10px; text-align: center; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.2s; border: 1px solid #333; }
+        .ep-num:hover { background: var(--primary); border-color: var(--primary); }
+        .ep-num.active { background: var(--primary); border-color: var(--primary); }
+
+        #loader { text-align: center; padding: 100px; font-size: 20px; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">X <span>Anime</span></a>
+    </header>
+
+    <div id="loader"><i class="fa-solid fa-spinner fa-spin"></i> Loading Player...</div>
+
+    <div id="main-content" class="watch-container" style="display: none;">
+        
+        <div class="player-wrapper">
+            <iframe id="video-iframe" src="" allowfullscreen></iframe>
+        </div>
+
+        <div class="server-box">
+            <div class="server-title"><i class="fa-solid fa-server"></i> SELECT SERVER (Fastest First)</div>
+            <div class="server-grid">
+                <button class="srv-btn active" onclick="changeServer('vidsrc', this)">VidSrc</button>
+                <button class="srv-btn" onclick="changeServer('vidlink', this)">VidLink</button>
+                <button class="srv-btn" onclick="changeServer('vidsrc_me', this)">VidSrc.me</button>
+                <button class="srv-btn" onclick="changeServer('hydrax', this)">HydraX</button>
+                <button class="srv-btn" onclick="changeServer('vidstream', this)">VidStream</button>
+            </div>
+        </div>
+
+        <div class="anime-info">
+            <div class="info-poster"><img id="anime-poster" src=""></div>
+            <div class="info-text">
+                <h1 id="anime-title">Loading...</h1>
+                <div class="meta-tags">
+                    <span id="anime-rating">⭐ 0.0</span>
+                    <span id="anime-year">2026</span>
+                    <span id="anime-type">TV</span>
+                </div>
+                <p id="anime-synopsis" style="color: var(--text-gray); line-height: 1.5; font-size: 14px;"></p>
+            </div>
+        </div>
+
+        <div class="episode-section">
+            <div class="ep-header">
+                <span><i class="fa-solid fa-list"></i> EPISODES</span>
+                <span id="current-ep-display" style="color: var(--primary);">EP 1</span>
+            </div>
+            <div class="ep-grid" id="episode-grid"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const animeId = urlParams.get('id');
+        let currentEp = 1;
+        let currentServer = 'vidsrc';
+
+        async function loadAnime() {
+            if (!animeId) return;
+            try {
+                // Jikan API for Info
+                const res = await fetch(`https://api.jikan.moe/v4/anime/${animeId}`);
+                const data = await res.json();
+                const anime = data.data;
+
+                document.getElementById('anime-title').innerText = anime.title;
+                document.getElementById('anime-poster').src = anime.images.jpg.large_image_url;
+                document.getElementById('anime-rating').innerText = `⭐ ${anime.score || 'N/A'}`;
+                document.getElementById('anime-year').innerText = anime.year || 'Unknown';
+                document.getElementById('anime-synopsis').innerText = anime.synopsis ? anime.synopsis.substring(0, 250) + "..." : "";
+
+                // Load Episode List
+                const epRes = await fetch(`https://api.jikan.moe/v4/anime/${animeId}/episodes`);
+                const epData = await epRes.json();
+                const epGrid = document.getElementById('episode-grid');
+                
+                const totalEps = epData.data.length > 0 ? epData.data.length : 1;
+                
+                for (let i = 1; i <= totalEps; i++) {
+                    const epDiv = document.createElement('div');
+                    epDiv.className = `ep-num ${i === 1 ? 'active' : ''}`;
+                    epDiv.innerText = i;
+                    epDiv.onclick = () => playEpisode(i, epDiv);
+                    epGrid.appendChild(epDiv);
+                }
+
+                // First Episode Play
+                playEpisode(1);
+                
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function playEpisode(num, el) {
+            currentEp = num;
+            document.getElementById('current-ep-display').innerText = `EP ${num}`;
+            
+            // Highlight active episode
+            document.querySelectorAll('.ep-num').forEach(item => item.classList.remove('active'));
+            if(el) el.classList.add('active');
+
+            updateIframe();
+        }
+
+        function changeServer(srv, btn) {
+            currentServer = srv;
+            document.querySelectorAll('.srv-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateIframe();
+        }
+
+        function updateIframe() {
+            const iframe = document.getElementById('video-iframe');
+            let url = "";
+
+            // All major anime servers
+            if (currentServer === 'vidsrc') {
+                url = `https://vidsrc.to/embed/anime/${animeId}/${currentEp}`;
+            } else if (currentServer === 'vidlink') {
+                url = `https://vidlink.pro/anime/${animeId}/${currentEp}`;
+            } else if (currentServer === 'vidsrc_me') {
+                url = `https://vidsrc.xyz/embed/anime?malid=${animeId}&episode=${currentEp}`;
+            } else if (currentServer === 'hydrax') {
+                url = `https://vidsrc.me/embed/anime?malid=${animeId}&ep=${currentEp}`;
+            } else if (currentServer === 'vidstream') {
+                url = `https://autoembed.co/anime/mal/${animeId}/${currentEp}`;
+            }
+
+            iframe.src = url;
+        }
+
+        loadAnime();
+    </script>
+
+    <script src="https://kit.fontawesome.com/your-fontawesome-key.js" crossorigin="anonymous"></script>
+</body>
+</html>
