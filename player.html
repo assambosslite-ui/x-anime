@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X Anime | Player</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* === THEME VARIABLES === */
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-card: #151515;
+            --primary: #ce2525;
+            --text-light: #ffffff;
+            --text-muted: #888;
+            --header-bg: rgba(10, 10, 10, 0.95);
+            --sidebar-width: 280px;
+        }
+
+        body.light-mode {
+            --bg-dark: #f0f2f5;
+            --bg-card: #ffffff;
+            --text-light: #1a1a1a;
+            --text-muted: #555;
+            --header-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); transition: 0.3s; overflow-x: hidden; padding-bottom: 50px; }
+        a { text-decoration: none; color: inherit; }
+
+        /* --- Header --- */
+        header { background-color: var(--header-bg); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); position: sticky; top: 0; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .menu-btn { font-size: 22px; cursor: pointer; color: #f5c518; }
+        .logo { font-size: 24px; font-weight: 900; text-transform: uppercase; }
+        .logo span { color: var(--primary); }
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .theme-toggle { cursor: pointer; font-size: 20px; color: var(--primary); }
+        .user-profile { width: 40px; height: 40px; border-radius: 50%; background: #444; display: flex; justify-content: center; align-items: center; color: white; font-size: 18px; cursor: pointer; overflow: hidden; }
+
+        /* --- Sidebar Styles --- */
+        .sidebar { position: fixed; top: 0; left: calc(-1 * var(--sidebar-width)); width: var(--sidebar-width); height: 100%; background: var(--bg-card); z-index: 1001; transition: 0.4s ease; padding: 20px; box-shadow: 5px 0 15px rgba(0,0,0,0.5); overflow-y: auto; }
+        .sidebar.active { left: 0; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .sidebar-close { font-size: 24px; cursor: pointer; color: var(--primary); }
+        .sidebar-section { margin-bottom: 30px; }
+        .sidebar-section h3 { font-size: 14px; text-transform: uppercase; color: var(--primary); margin-bottom: 15px; letter-spacing: 1px; }
+        .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-light); font-weight: 500; transition: 0.3s; cursor: pointer; border-bottom: 1px solid #222; }
+        .sidebar-link:hover { color: var(--primary); padding-left: 10px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
+        .overlay.active { display: block; }
+
+        /* --- Player Section --- */
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 5%; }
+        .anime-info-header { display: flex; gap: 20px; margin-bottom: 30px; align-items: flex-start; flex-wrap: wrap; }
+        .anime-poster { width: 150px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .anime-details h1 { font-size: 24px; margin-bottom: 10px; }
+        .anime-meta { color: var(--text-muted); font-size: 14px; margin-bottom: 10px; display: flex; gap: 15px; }
+        .anime-meta span i { color: #f5c518; }
+        .anime-desc { font-size: 14px; line-height: 1.6; color: #ccc; }
+
+        /* Video Player */
+        .watch-container { background: var(--bg-card); padding: 15px; border-radius: 10px; border: 1px solid #222; margin-bottom: 30px; }
+        .player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 20px; position: relative; }
+        .player-wrapper iframe { width: 100%; height: 100%; border: none; }
+        
+        /* Language Toggle */
+        .lang-container { background: #111; padding: 10px; border-radius: 8px; display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; border: 1px solid #333; }
+        .lang-btn { background: transparent; color: var(--text-gray); border: 2px solid transparent; padding: 6px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: capitalize; }
+        .lang-btn:hover { color: #fff; }
+        .lang-btn.active { background: rgba(206, 37, 37, 0.2); color: var(--primary); border-color: var(--primary); }
+
+        /* Server Grid */
+        .server-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; font-size: 14px; color: var(--text-muted); }
+        .server-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+        .srv-btn { background: #222; color: white; border: 1px solid #333; padding: 10px; border-radius: 5px; cursor: pointer; transition: 0.3s; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .srv-btn:hover { background: #333; }
+        .srv-btn.active { background: var(--primary); border-color: var(--primary); }
+
+        /* --- Pro Download Section --- */
+        .dl-section-wrapper { max-width: 800px; margin: 30px auto 0; padding: 0; text-align: center; }
+        .main-dl-btn { background: #28a745; color: white; width: 100%; max-width: 400px; padding: 15px; border-radius: 8px; border: none; font-weight: 900; font-size: 18px; cursor: pointer; display: none; margin: 0 auto; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4); transition: 0.3s; }
+        .main-dl-btn:hover { transform: scale(1.02); }
+        .server-list-box { display: none; flex-direction: column; gap: 12px; align-items: center; margin-top: 15px; background: #0a0a0a; padding: 20px; border-radius: 10px; border: 1px solid #333; }
+        .server-item-btn { color: white; width: 100%; max-width: 350px; padding: 12px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
+        .quality-options-box { display: none; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 5px; padding: 10px; background: #151515; border-radius: 10px; width: 100%; max-width: 350px; border: 1px solid #444; }
+        .q-btn { background: #ce2525; color: white; padding: 8px 15px; border-radius: 5px; font-size: 13px; font-weight: bold; text-decoration: none; min-width: 70px; border: none; cursor: pointer; transition: 0.3s; }
+        .q-btn:hover { background: #a81c1c; }
+
+        /* Episodes */
+        .episodes-section { margin-top: 40px; }
+        .episodes-section h2 { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .ep-grid { display: grid; grid-template-columns: 1fr; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        @media (min-width: 600px) { .ep-grid { grid-template-columns: repeat(2, 1fr); } }
+        .ep-item { background: var(--bg-card); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
+        .ep-title { font-weight: bold; font-size: 14px; }
+        .ep-title span { color: var(--primary); margin-right: 10px; }
+        .watch-btn { background: rgba(255,255,255,0.1); color: white; border: none; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s; }
+        .watch-btn:hover { background: var(--primary); }
+
+        #loader { text-align: center; padding: 50px; font-size: 20px; color: var(--primary); font-weight: bold; }
+        #main-content { display: none; }
+    </style>
+
+    <script src="https://pl29095112.profitablecpmratenetwork.com/ea/d3/ba/ead3babfe35bdb6972524a7e4d316df8.js"></script>
+</head>
+<body>
+
+    <script src="https://pl29095244.profitablecpmratenetwork.com/ea/de/88/eade88822532cd5a5fe013cb434f6ea6.js"></script>
+
+    <header>
+        <div class="header-left">
+            <i class="fa-solid fa-bars menu-btn" onclick="toggleSidebar()"></i>
+            <a href="index.html" class="logo">X <span>Anime</span></a>
+        </div>
+        <div class="header-actions">
+            <div class="theme-toggle" onclick="toggleTheme()"><i id="theme-icon" class="fa-solid fa-moon"></i></div>
+            <div class="user-profile" id="userBtn" onclick="location.href='index.html'"><i class="fa-solid fa-user"></i></div>
+        </div>
+    </header>
+
+    <div id="loader">Loading Anime Data... Please Wait <i class="fa-solid fa-spinner fa-spin"></i></div>
+
+    <div class="container" id="main-content">
+        <div class="anime-info-header">
+            <img src="" alt="Poster" class="anime-poster" id="anime-poster">
+            <div class="anime-details">
+                <h1 id="anime-title">Loading...</h1>
+                <div class="anime-meta">
+                    <span><i class="fa-solid fa-star"></i> <span id="anime-score"></span></span>
+                    <span id="anime-year"></span>
+                </div>
+                <p class="anime-desc" id="anime-synopsis"></p>
+            </div>
+        </div>
+
+        <div class="watch-container">
+            <div class="player-wrapper">
+                <iframe id="video-iframe" src="" allowfullscreen></iframe>
+            </div>
+            
+            <div class="server-container">
+                <div class="lang-container" id="lang-switcher-box">
+                    <button class="lang-btn" id="lang-hindi" onclick="changeLanguage('hindi')">Hindi</button>
+                    <button class="lang-btn" id="lang-dub" onclick="changeLanguage('dub')">Eng Dub</button>
+                    <button class="lang-btn" id="lang-sub" onclick="changeLanguage('sub')">Jap Sub</button>
+                </div>
+
+                <div class="server-header">
+                    <span>SELECT SERVER</span>
+                    <span id="current-ep-badge" style="color:var(--primary); font-weight:bold; font-size:14px;">EP 1</span>
+                </div>
+                
+                <div class="server-grid">
+                    <button class="srv-btn" id="btn-doodstream" onclick="changeServer('doodstream', this)"><i class="fa-solid fa-play"></i> DoodStream</button>
+                    <button class="srv-btn" id="btn-streamtape" onclick="changeServer('streamtape', this)"><i class="fa-solid fa-play"></i> Streamtape</button>
+                    <button class="srv-btn" id="btn-mixdrop" onclick="changeServer('mixdrop', this)"><i class="fa-solid fa-play"></i> MixDrop</button>
+                    <button class="srv-btn" id="btn-filemoon" onclick="changeServer('filemoon', this)"><i class="fa-solid fa-play"></i> Filemoon</button>
+                </div>
+
+                <div class="dl-section-wrapper">
+                    <button class="main-dl-btn" id="main-dl-trigger" onclick="toggleServers()">
+                        <i class="fa-solid fa-download"></i> DOWNLOAD NOW
+                    </button>
+                    
+                    <div class="server-list-box" id="server-list-box">
+                        <button class="server-item-btn" style="background: #007bff;" onclick="toggleQualities('q-box-1')">
+                            <i class="fa-solid fa-cloud"></i> Pixeldrain Server
+                        </button>
+                        <div class="quality-options-box" id="q-box-1"></div>
+
+                        <button class="server-item-btn" style="background: #fd7e14;" onclick="toggleQualities('q-box-2')">
+                            <i class="fa-solid fa-play"></i> Vidmoly Server
+                        </button>
+                        <div class="quality-options-box" id="q-box-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="episodes-section">
+            <h2>Episodes</h2>
+            <div class="ep-grid" id="episode-list-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyiI33joyBN3U_r6GCfQNKI-I98YaeTBNw34eWzH8Q7qr1PDSa68RqlDG0FPLVvoRUB/exec";
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const animeId = urlParams.get('id');
+        let currentEpNum = 1;
+        let currentLanguage = "sub"; 
+        let myEpisodes = {}; 
+        let customPoster = ""; 
+
+        async function fetchLinksFromSheet() {
+            try {
+                const response = await fetch(SHEET_API_URL);
+                if (!response.ok) throw new Error("Network issue: " + response.status);
+                
+                const allData = await response.json();
+                const filteredData = allData.filter(item => String(item.animeId) === String(animeId));
+                
+                if (filteredData.length === 0) {
+                    document.getElementById('loader').innerHTML = `Error: ID '${animeId}' Sheet mein nahi mili!`;
+                    return;
+                }
+                
+                filteredData.forEach(item => {
+                    let ep = item.ep;
+                    let lang = item.language || "sub";
+                    if(!myEpisodes[ep]) myEpisodes[ep] = {};
+                    myEpisodes[ep][lang] = {
+                        doodstream: item.dood,
+                        streamtape: item.tape,
+                        mixdrop: item.mix,
+                        filemoon: item.filemoon,
+                        pix_1080: item.pix_1080,
+                        pix_720: item.pix_720,
+                        pix_480: item.pix_480,
+                        pix_360: item.pix_360,
+                        vid_1080: item.vid_1080,
+                        vid_720: item.vid_720,
+                        vid_480: item.vid_480,
+                        vid_360: item.vid_360
+                    };
+                    if(item.poster) customPoster = item.poster;
+                });
+                loadAnimeData();
+            } catch (error) { 
+                document.getElementById('loader').innerHTML = "Google Sheet Error: " + error.message;
+            }
+        }
+
+        async function loadAnimeData() {
+            if(!animeId) return;
+            try {
+                const res = await fetch(`https://api.jikan.moe/v4/anime/${animeId}`);
+                const data = await res.json();
+                const anime = data.data;
+                document.getElementById('anime-title').innerText = anime.title_english || anime.title;
+                document.getElementById('anime-poster').src = customPoster || anime.images.jpg.large_image_url;
+                document.getElementById('anime-score').innerText = anime.score || "N/A";
+                document.getElementById('anime-year').innerText = anime.year || "2026";
+                document.getElementById('anime-synopsis').innerText = anime.synopsis?.substring(0, 200) + "...";
+
+                const epContainer = document.getElementById('episode-list-container');
+                let episodeNumbers = Object.keys(myEpisodes).sort((a,b) => a-b);
+                episodeNumbers.forEach(epNum => {
+                    epContainer.innerHTML += `<div class="ep-item"><div class="ep-title">EP ${epNum}</div><button class="watch-btn" onclick="playEpisode('${epNum}')">Watch</button></div>`;
+                });
+                if(episodeNumbers.length > 0) playEpisode(episodeNumbers[0]);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+            } catch(e) {}
+        }
+
+        window.playEpisode = (epNum) => {
+            currentEpNum = epNum;
+            document.getElementById('current-ep-badge').innerText = `EP ${epNum}`;
+            const epLangs = myEpisodes[epNum];
+            document.getElementById('lang-hindi').style.display = epLangs['hindi'] ? "block" : "none";
+            document.getElementById('lang-dub').style.display = epLangs['dub'] ? "block" : "none";
+            document.getElementById('lang-sub').style.display = epLangs['sub'] ? "block" : "none";
+            
+            document.querySelectorAll('.quality-options-box').forEach(b => b.style.display = 'none');
+            document.getElementById('server-list-box').style.display = "none";
+
+            if(epLangs['hindi']) changeLanguage('hindi');
+            else if(epLangs['dub']) changeLanguage('dub');
+            else changeLanguage('sub');
+        };
+
+        window.changeLanguage = (lang) => {
+            currentLanguage = lang;
+            const epData = myEpisodes[currentEpNum][lang];
+            
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`lang-${lang}`).classList.add('active');
+
+            document.getElementById('btn-doodstream').style.display = epData.doodstream ? "flex" : "none";
+            document.getElementById('btn-streamtape').style.display = epData.streamtape ? "flex" : "none";
+            document.getElementById('btn-mixdrop').style.display = epData.mixdrop ? "flex" : "none";
+            document.getElementById('btn-filemoon').style.display = epData.filemoon ? "flex" : "none";
+
+            document.getElementById('video-iframe').src = epData.filemoon || epData.doodstream || epData.streamtape || epData.mixdrop || "";
+            
+            const hasDownload = (epData.pix_1080 || epData.pix_720 || epData.pix_480 || epData.pix_360 || epData.vid_1080 || epData.vid_720 || epData.vid_480 || epData.vid_360);
+            document.getElementById('main-dl-trigger').style.display = hasDownload ? "block" : "none";
+        };
+
+        window.toggleServers = () => {
+            const box = document.getElementById('server-list-box');
+            box.style.display = (box.style.display === "flex") ? "none" : "flex";
+        };
+
+        window.toggleQualities = (boxId) => {
+            document.querySelectorAll('.quality-options-box').forEach(b => b.style.display = 'none');
+            const epData = myEpisodes[currentEpNum][currentLanguage];
+            const qBox = document.getElementById(boxId);
+            let html = "";
+            
+            if(boxId === 'q-box-1') {
+                if(epData.pix_1080) html += `<button class="q-btn" style="background:#007bff" onclick="window.open('${epData.pix_1080}', '_blank')">1080p</button>`;
+                if(epData.pix_720)  html += `<button class="q-btn" style="background:#007bff" onclick="window.open('${epData.pix_720}', '_blank')">720p</button>`;
+                if(epData.pix_480)  html += `<button class="q-btn" style="background:#007bff" onclick="window.open('${epData.pix_480}', '_blank')">480p</button>`;
+                if(epData.pix_360)  html += `<button class="q-btn" style="background:#007bff" onclick="window.open('${epData.pix_360}', '_blank')">360p</button>`;
+            } 
+            else if(boxId === 'q-box-2') {
+                if(epData.vid_1080) html += `<button class="q-btn" style="background:#fd7e14" onclick="window.open('${epData.vid_1080}', '_blank')">1080p</button>`;
+                if(epData.vid_720)  html += `<button class="q-btn" style="background:#fd7e14" onclick="window.open('${epData.vid_720}', '_blank')">720p</button>`;
+                if(epData.vid_480)  html += `<button class="q-btn" style="background:#fd7e14" onclick="window.open('${epData.vid_480}', '_blank')">480p</button>`;
+                if(epData.vid_360)  html += `<button class="q-btn" style="background:#fd7e14" onclick="window.open('${epData.vid_360}', '_blank')">360p</button>`;
+            }
+            
+            qBox.innerHTML = html === "" ? "<p style='color:gray; font-size:12px;'>Links unavailable.</p>" : html;
+            qBox.style.display = "flex";
+        };
+
+        window.changeServer = function(serverName, btnElement) {
+            document.querySelectorAll('.srv-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            document.getElementById('video-iframe').src = myEpisodes[currentEpNum][currentLanguage][serverName];
+        }
+
+        fetchLinksFromSheet();
+    </script>
+
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; display: flex; justify-content: center; z-index: 9999; background-color: rgba(0,0,0,0.8);">
+        <script>
+          atOptions = {
+            'key' : '5a8a4cdaf019c07c395b91d56cb7ba39',
+            'format' : 'iframe',
+            'height' : 50,
+            'width' : 320,
+            'params' : {}
+          };
+        </script>
+        <script src="https://www.highperformanceformat.com/5a8a4cdaf019c07c395b91d56cb7ba39/invoke.js"></script>
+    </div>
+    </body>
+</html>
